@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,23 +8,32 @@ datasource db {
 }
 
 model User {
-    id Int @id @default(autoincrement())
-    createdAt DateTime @default(now())
-    updateAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
 
-    email String
-    hash String
+  email String @unique
+  hash  String
 
-    firstName String
-    secondName String?
+  firstName  String
+  secondName String?
+
+  todos ToDo[]
+
+  @@map("users")
 }
 
 model ToDo {
-    id Int @id @default(autoincrement())
-    createdAt DateTime @default(now())
-    updateAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
 
-    tittle String
-    description String?
-    link String
+  tittle      String
+  description String?
+  link        String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("todos")
 }
