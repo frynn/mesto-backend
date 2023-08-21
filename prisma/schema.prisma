@@ -28,9 +28,9 @@ model ToDo {
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
 
-  tittle      String
+  title       String
   description String?
-  link        String
+  completed   Boolean
 
   userId Int
   user   User @relation(fields: [userId], references: [id])

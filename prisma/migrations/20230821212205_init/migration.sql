@@ -1,16 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `ToDo` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropTable
-DROP TABLE "ToDo";
-
--- DropTable
-DROP TABLE "User";
-
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
@@ -29,9 +16,9 @@ CREATE TABLE "todos" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL,
-    "tittle" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "description" TEXT,
-    "link" TEXT NOT NULL,
+    "completed" BOOLEAN NOT NULL,
     "userId" INTEGER NOT NULL,
 
     CONSTRAINT "todos_pkey" PRIMARY KEY ("id")
