@@ -30,7 +30,7 @@ model ToDo {
 
   title       String
   description String?
-  completed   Boolean
+  completed   Boolean? @default(false)
 
   userId Int
   user   User @relation(fields: [userId], references: [id])

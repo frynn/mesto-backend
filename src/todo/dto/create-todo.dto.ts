@@ -9,5 +9,6 @@ export class CreateTodoDto {
   description?: string;
 
   @IsBoolean()
-  completed: boolean;
+  @IsOptional()
+  completed?: boolean;
 }

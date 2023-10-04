@@ -3,13 +3,14 @@ services:
   todo-db:
     image: postgres:13
     volumes:
-      - db-data:/etc/data
+      - db-data:/etc/pgdata
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123
       POSTGRES_DB: nest
+      PGDATA: /etc/pgdata
     networks:
       - freecodecamp
 networks:
