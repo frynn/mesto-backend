@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { JwtGuard } from '../auth/guard';
 import { EditUserDto } from './dto';
@@ -8,14 +17,13 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @UseGuards(JwtGuard)
   @Get('me')
   getMe(@Req() req: Request) {
     return req.user;
   }
 
-  @Patch()
-  editUser(@Req() req: Request, @Body() dto: EditUserDto) {
-    return this.userService.editUser(req.user.id, dto);
+  @Patch(':id')
+  editUser(@Param('id', ParseIntPipe) id: number, @Body() dto: EditUserDto) {
+    return this.userService.editUser(id, dto);
   }
 }

@@ -8,8 +8,4 @@ export class EditTodoDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  completed?: boolean;
 }

@@ -4,17 +4,23 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { EditTodoDto } from './dto';
 
 @Injectable()
-export class TodoService {
+export class PostService {
   constructor(private prisma: PrismaService) {}
 
-  getTodos(userId: number) {
-    return this.prisma.toDo.findMany({
+  async getAllPosts() {
+    return this.prisma.post.findMany({
+      include: { user: true },
+    });
+  }
+
+  getPosts(userId: number) {
+    return this.prisma.post.findMany({
       where: { userId },
     });
   }
 
-  getTodoById(userId: number, todoId: number) {
-    return this.prisma.toDo.findUnique({
+  getPostById(userId: number, todoId: number) {
+    return this.prisma.post.findUnique({
       where: {
         id: todoId,
         userId,
@@ -22,8 +28,8 @@ export class TodoService {
     });
   }
 
-  async createTodo(userId: number, dto: CreateTodoDto) {
-    return this.prisma.toDo.create({
+  async createPost(userId: number, dto: CreateTodoDto) {
+    return this.prisma.post.create({
       data: {
         userId,
         ...dto,
@@ -31,20 +37,20 @@ export class TodoService {
     });
   }
 
-  async editTodoById(userId: number, todoId: number, dto: EditTodoDto) {
+  async editPostById(userId: number, postId: number, dto: EditTodoDto) {
     //getting by id todo_
-    const todo = await this.prisma.toDo.findUnique({
+    const post = await this.prisma.post.findUnique({
       where: {
-        id: todoId,
+        id: postId,
       },
     });
     // check if user owns this todo_
-    if (!todo || todo.userId !== userId) {
+    if (!post || post.userId !== userId) {
       throw new ForbiddenException('Access to resources denied');
     }
-    return this.prisma.toDo.update({
+    return this.prisma.post.update({
       where: {
-        id: todoId,
+        id: postId,
       },
       data: {
         ...dto,
@@ -52,19 +58,19 @@ export class TodoService {
     });
   }
 
-  async deleteTodo(userId: number, todoId: number) {
-    const todo = await this.prisma.toDo.findUnique({
+  async deletePost(userId: number, postId: number) {
+    const post = await this.prisma.post.findUnique({
       where: {
-        id: todoId,
+        id: postId,
       },
     });
     // check if user owns this todo_
-    if (!todo || todo.userId !== userId) {
+    if (!post || post.userId !== userId) {
       throw new ForbiddenException('Access to resources denied');
     }
-    await this.prisma.toDo.delete({
+    await this.prisma.post.delete({
       where: {
-        id: todoId,
+        id: postId,
       },
     });
   }

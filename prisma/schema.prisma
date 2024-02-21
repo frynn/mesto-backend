@@ -15,25 +15,31 @@ model User {
   email String @unique
   hash  String
 
-  firstName  String
-  secondName String?
+  firstname      String
+  secondndockame String
+  patronymic     String
+  login          String  @unique
+  about          String?
+  photo          String?
+  date           String
 
-  todos ToDo[]
+  todos Post[]
 
   @@map("users")
 }
 
-model ToDo {
+model Post {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
 
   title       String
   description String?
-  completed   Boolean? @default(false)
+  link        String
+  picture     String
 
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
-  @@map("todos")
+  @@map("posts")
 }
