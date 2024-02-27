@@ -15,13 +15,13 @@ model User {
   email String @unique
   hash  String
 
-  firstname      String
-  secondndockame String
-  patronymic     String
-  login          String  @unique
-  about          String?
-  photo          String?
-  date           String
+  firstname  String
+  secondname String
+  patronymic String
+  login      String  @unique
+  about      String?
+  photo      String?
+  date       String
 
   todos Post[]
 
@@ -37,6 +37,7 @@ model Post {
   description String?
   link        String
   picture     String
+  tag         String
 
   userId Int
   user   User @relation(fields: [userId], references: [id])

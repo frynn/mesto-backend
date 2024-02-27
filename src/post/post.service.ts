@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateTodoDto } from './dto/create-todo.dto';
+import { CreatePostDto } from './dto/create-post.dto';
 import { EditTodoDto } from './dto';
 
 @Injectable()
@@ -10,6 +10,14 @@ export class PostService {
   async getAllPosts() {
     return this.prisma.post.findMany({
       include: { user: true },
+    });
+  }
+
+  async getPostsByTags(tag: string) {
+    return this.prisma.post.findMany({
+      where: {
+        tag: { contains: tag },
+      },
     });
   }
 
@@ -28,7 +36,7 @@ export class PostService {
     });
   }
 
-  async createPost(userId: number, dto: CreateTodoDto) {
+  async createPost(userId: number, dto: CreatePostDto) {
     return this.prisma.post.create({
       data: {
         userId,

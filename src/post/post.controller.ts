@@ -9,15 +9,17 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import e, { Request } from 'express';
-import { CreateTodoDto } from './dto/create-todo.dto';
+import { CreatePostDto } from './dto/create-post.dto';
 import { EditTodoDto } from './dto';
 import { JwtGuard } from '../auth/guard';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -28,11 +30,6 @@ import { editFileName } from '../utils/file-upload-utils';
 export class PostController {
   constructor(private postService: PostService) {}
 
-  @Get(':id')
-  getPostById(@Req() req: Request, @Param('id', ParseIntPipe) postId: number) {
-    return this.postService.getPostById(req.user.id, postId);
-  }
-
   @Get('all-posts')
   async getAllPosts() {
     return this.postService.getAllPosts();
@@ -41,6 +38,21 @@ export class PostController {
   @Get('user-posts')
   getPosts(@Req() req: Request) {
     return this.postService.getPosts(req.user.id);
+  }
+
+  @Get('posts-by-tag')
+  getPostsByTags(@Query('tag') tag: string) {
+    return this.postService.getPostsByTags(tag);
+  }
+
+  @Get(':id')
+  getPostById(@Req() req: Request, @Param('id', ParseIntPipe) postId: number) {
+    return this.postService.getPostById(req.user.id, postId);
+  }
+
+  @Get('/images/:imgpath')
+  seeUploadedFile(@Param('imgpath') image, @Res() res) {
+    return res.sendFile(image, { root: './uploads/post-images' });
   }
 
   @Post('upload')
@@ -59,14 +71,9 @@ export class PostController {
     };
   }
 
-  @Get('/:imgpath')
-  seeUploadedFile(@Param('imgpath') image, @Res() res) {
-    return res.sendFile(image, { root: './uploads/post-images' });
-  }
-
   @UseGuards(JwtGuard)
   @Post()
-  createPost(@Req() req: Request, @Body() dto: CreateTodoDto) {
+  createPost(@Req() req: Request, @Body() dto: CreatePostDto) {
     return this.postService.createPost(req.user.id, dto);
   }
 
