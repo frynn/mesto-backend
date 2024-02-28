@@ -41,8 +41,8 @@ export class PostController {
   }
 
   @Get('posts-by-tag')
-  getPostsByTags(@Query('tag') tag: string) {
-    return this.postService.getPostsByTags(tag);
+  getPostsByTags(@Query('tag') tags: string[]) {
+    return this.postService.getPostsByTags(tags);
   }
 
   @Get(':id')

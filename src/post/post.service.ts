@@ -13,10 +13,10 @@ export class PostService {
     });
   }
 
-  async getPostsByTags(tag: string) {
+  async getPostsByTags(tags: string[]) {
     return this.prisma.post.findMany({
       where: {
-        tag: { contains: tag },
+        tag: typeof tags === 'string' ? tags : { in: tags },
       },
     });
   }
