@@ -18,12 +18,13 @@ export class PostService {
       where: {
         tag: typeof tags === 'string' ? tags : { in: tags },
       },
+      include: { user: true },
     });
   }
 
   getPosts(userId: number) {
     return this.prisma.post.findMany({
-      where: { userId },
+      where: { userId: userId },
     });
   }
 
@@ -32,6 +33,24 @@ export class PostService {
       where: {
         id: todoId,
         userId,
+      },
+    });
+  }
+
+  async search(query: string) {
+    return this.prisma.post.findMany({
+      where: {
+        title: {
+          contains: query,
+          mode: 'insensitive',
+        },
+      },
+      include: {
+        user: {
+          select: {
+            login: true,
+          },
+        },
       },
     });
   }

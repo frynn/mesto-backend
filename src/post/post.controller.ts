@@ -15,7 +15,6 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  ValidationPipe,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import e, { Request } from 'express';
@@ -35,9 +34,15 @@ export class PostController {
     return this.postService.getAllPosts();
   }
 
-  @Get('user-posts')
-  getPosts(@Req() req: Request) {
-    return this.postService.getPosts(req.user.id);
+  // @UseGuards(JwtGuard)
+  @Get('search')
+  async search(@Query('query') query: string) {
+    return this.postService.search(query);
+  }
+
+  @Get('user-posts/:userId')
+  getPosts(@Param('userId', ParseIntPipe) userId: number) {
+    return this.postService.getPosts(userId);
   }
 
   @Get('posts-by-tag')
