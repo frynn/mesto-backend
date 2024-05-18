@@ -20,4 +20,12 @@ export class UserService {
 
     return user;
   }
+
+  async getUserProfile(login: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        login: login,
+      },
+    });
+  }
 }

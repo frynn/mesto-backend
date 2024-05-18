@@ -10,7 +10,7 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   email String @unique
   hash  String
@@ -23,7 +23,12 @@ model User {
   photo      String?
   date       String
 
-  todos Post[]
+  posts      Post[]
+  comments   Comment[]
+  likes      Like[]
+  savedPosts SavedPost[]
+  blocker    Blacklist[] @relation("UserBlocks_blockerToUser")
+  blocked    Blacklist[] @relation("UserBlocks_blockedToUser")
 
   @@map("users")
 }
@@ -31,7 +36,7 @@ model User {
 model Post {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   title       String
   description String?
@@ -39,8 +44,69 @@ model Post {
   picture     String
   tag         String
 
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id])
+  comments   Comment[]
+  likes      Like[]
+  savedPosts SavedPost[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content String
+
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
-  @@map("posts")
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+
+  @@map("comments")
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("likes")
+}
+
+model SavedPost {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("savedPosts")
+}
+
+model Blacklist {
+  id        Int @id @default(autoincrement())
+  blockerId Int
+  blockedId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blocker User @relation("UserBlocks_blockerToUser", fields: [blockerId], references: [id])
+  blocked User @relation("UserBlocks_blockedToUser", fields: [blockedId], references: [id])
+
+  @@map("blacklists")
 }

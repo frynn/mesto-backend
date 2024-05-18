@@ -50,9 +50,24 @@ export class PostController {
     return this.postService.getPostsByTags(tags);
   }
 
+  @Post(':postId/likes')
+  async likePost(@Param('postId') postId: string) {
+    return this.postService.likePost(parseInt(postId));
+  }
+
+  @Get(':postId/likes')
+  async getLikes(@Param('postId') postId: string) {
+    return this.postService.getLikes(parseInt(postId));
+  }
+
+  @Delete(':postId/likes')
+  async unlikePost(@Param('postId') postId: string) {
+    return this.postService.unlikePost(parseInt(postId));
+  }
+
   @Get(':id')
-  getPostById(@Req() req: Request, @Param('id', ParseIntPipe) postId: number) {
-    return this.postService.getPostById(req.user.id, postId);
+  getPostById(@Param('id', ParseIntPipe) postId: number) {
+    return this.postService.getPostById(postId);
   }
 
   @Get('/images/:imgpath')

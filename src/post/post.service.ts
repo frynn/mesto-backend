@@ -7,6 +7,8 @@ import { EditTodoDto } from './dto';
 export class PostService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly likes: Record<number, number> = {};
+
   async getAllPosts() {
     return this.prisma.post.findMany({
       include: { user: true },
@@ -28,12 +30,12 @@ export class PostService {
     });
   }
 
-  getPostById(userId: number, todoId: number) {
+  getPostById(postId: number) {
     return this.prisma.post.findUnique({
       where: {
-        id: todoId,
-        userId,
+        id: postId,
       },
+      include: { user: true },
     });
   }
 
@@ -100,5 +102,30 @@ export class PostService {
         id: postId,
       },
     });
+  }
+
+  //like functionality
+
+  likePost(postId: number): string {
+    if (!this.likes[postId]) {
+      this.likes[postId] = 0;
+    }
+    this.likes[postId]++;
+    return `Пост ${postId} теперь имеет ${this.likes[postId]} лайков`;
+  }
+
+  getLikes(postId: number): string {
+    if (!this.likes[postId]) {
+      return `Пост ${postId} не имеет лайков`;
+    }
+    return `Пост ${postId} имеет ${this.likes[postId]} лайков`;
+  }
+
+  unlikePost(postId: number): string {
+    if (!this.likes[postId] || this.likes[postId] === 0) {
+      return `Пост ${postId} не имеет лайков`;
+    }
+    this.likes[postId]--;
+    return `Пост ${postId} теперь имеет ${this.likes[postId]} лайков`;
   }
 }
