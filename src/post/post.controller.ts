@@ -12,26 +12,29 @@ import {
   Query,
   Req,
   Res,
-  UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
+  Request as NestRequest,
 } from '@nestjs/common';
 import { PostService } from './post.service';
-import e, { Request } from 'express';
 import { CreatePostDto } from './dto/create-post.dto';
 import { EditTodoDto } from './dto';
 import { JwtGuard } from '../auth/guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { editFileName } from '../utils/file-upload-utils';
+import { OptionalJwtGuard } from '../auth/guard/optional-jwt.guard';
+import { Request } from 'express';
 
 @Controller('post')
 export class PostController {
   constructor(private postService: PostService) {}
 
+  @UseGuards(OptionalJwtGuard)
   @Get('all-posts')
-  async getAllPosts() {
-    return this.postService.getAllPosts();
+  async getAllPosts(@NestRequest() req) {
+    return this.postService.getAllPosts(req?.user?.id);
   }
 
   // @UseGuards(JwtGuard)
@@ -50,19 +53,25 @@ export class PostController {
     return this.postService.getPostsByTags(tags);
   }
 
-  @Post(':postId/likes')
-  async likePost(@Param('postId') postId: string) {
-    return this.postService.likePost(parseInt(postId));
+  @Post('likes/add/:userId/:postId')
+  async addLike(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
+    return this.postService.addLike(userId, postId);
   }
 
-  @Get(':postId/likes')
-  async getLikes(@Param('postId') postId: string) {
-    return this.postService.getLikes(parseInt(postId));
+  @Delete('likes/remove/:userId/:postId')
+  async removeLike(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
+    return this.postService.removeLike(userId, postId);
   }
 
-  @Delete(':postId/likes')
-  async unlikePost(@Param('postId') postId: string) {
-    return this.postService.unlikePost(parseInt(postId));
+  @Get('likes/get/:postId')
+  async countLikes(@Param('postId', ParseIntPipe) postId: number) {
+    return this.postService.countLikes(postId);
   }
 
   @Get(':id')
@@ -77,17 +86,18 @@ export class PostController {
 
   @Post('upload')
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 10, {
       storage: diskStorage({
         destination: './uploads/post-images',
         filename: editFileName,
       }),
     }),
   )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
+    const filenames = files.map((file) => file.filename);
     return {
-      originalname: file.originalname,
-      filename: file.filename,
+      originalnames: files.map((file) => file.originalname),
+      filenames,
     };
   }
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -11,8 +11,11 @@ export class CreatePostDto {
   @IsString()
   link: string;
 
+  @IsArray()
+  pictures: string[];
+
   @IsString()
-  picture: string;
+  region: string;
 
   @IsString()
   tag: string;

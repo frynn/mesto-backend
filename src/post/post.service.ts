@@ -7,11 +7,16 @@ import { EditTodoDto } from './dto';
 export class PostService {
   constructor(private prisma: PrismaService) {}
 
-  private readonly likes: Record<number, number> = {};
-
-  async getAllPosts() {
+  async getAllPosts(currentUserId?: number) {
     return this.prisma.post.findMany({
-      include: { user: true },
+      include: {
+        user: true,
+        likes:
+          currentUserId !== undefined
+            ? { where: { userId: currentUserId } }
+            : undefined,
+        _count: { select: { likes: true } },
+      },
     });
   }
 
@@ -106,26 +111,40 @@ export class PostService {
 
   //like functionality
 
-  likePost(postId: number): string {
-    if (!this.likes[postId]) {
-      this.likes[postId] = 0;
-    }
-    this.likes[postId]++;
-    return `Пост ${postId} теперь имеет ${this.likes[postId]} лайков`;
+  async addLike(userId: number, postId: number) {
+    return this.prisma.like.create({
+      data: {
+        userId: userId,
+        postId: postId,
+      },
+    });
   }
 
-  getLikes(postId: number): string {
-    if (!this.likes[postId]) {
-      return `Пост ${postId} не имеет лайков`;
-    }
-    return `Пост ${postId} имеет ${this.likes[postId]} лайков`;
+  async removeLike(userId: number, postId: number) {
+    return this.prisma.like.deleteMany({
+      where: {
+        userId: userId,
+        postId: postId,
+      },
+    });
   }
 
-  unlikePost(postId: number): string {
-    if (!this.likes[postId] || this.likes[postId] === 0) {
-      return `Пост ${postId} не имеет лайков`;
-    }
-    this.likes[postId]--;
-    return `Пост ${postId} теперь имеет ${this.likes[postId]} лайков`;
+  async countLikes(postId: number) {
+    return this.prisma.like.count({
+      where: {
+        postId: postId,
+      },
+    });
+  }
+
+  async didUserLikedPost(userId: number, postId: number) {
+    const like = await this.prisma.like.findFirst({
+      where: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+
+    return like !== null;
   }
 }

@@ -58,7 +58,7 @@ export class UserController {
     if (!user || !user.photo) {
       throw new NotFoundException('User or avatar not found');
     }
-    res.redirect(`/avatars/${user.photo}`);
+    res.sendFile(user.photo, { root: './uploads/users-avatars' });
   }
 
   @UseGuards(JwtGuard)

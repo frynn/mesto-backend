@@ -41,8 +41,9 @@ model Post {
   title       String
   description String?
   link        String
-  picture     String
+  pictures    String[]
   tag         String
+  region      String
 
   userId     Int
   user       User        @relation(fields: [userId], references: [id])
