@@ -23,12 +23,12 @@ model User {
   photo      String?
   date       String
 
-  posts      Post[]
-  comments   Comment[]
-  likes      Like[]
-  savedPosts SavedPost[]
-  blocker    Blacklist[] @relation("UserBlocks_blockerToUser")
-  blocked    Blacklist[] @relation("UserBlocks_blockedToUser")
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  savedPosts   SavedPost[]
+  blocker      Blacklist[]    @relation("UserBlocks_blockerToUser")
+  blocked      Blacklist[]    @relation("UserBlocks_blockedToUser")
 
   @@map("users")
 }
@@ -111,3 +111,5 @@ model Blacklist {
 
   @@map("blacklists")
 }
+
+

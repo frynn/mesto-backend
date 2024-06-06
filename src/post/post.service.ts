@@ -2,6 +2,9 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { EditTodoDto } from './dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class PostService {
@@ -10,22 +13,49 @@ export class PostService {
   async getAllPosts(currentUserId?: number) {
     return this.prisma.post.findMany({
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
         likes:
           currentUserId !== undefined
             ? { where: { userId: currentUserId } }
             : undefined,
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, comments: true } },
+        savedPosts:
+          currentUserId !== undefined
+            ? { where: { userId: currentUserId } }
+            : undefined,
       },
     });
   }
 
-  async getPostsByTags(tags: string[]) {
+  async getPostsByTags(tags: string[], currentUserId: number) {
     return this.prisma.post.findMany({
       where: {
         tag: typeof tags === 'string' ? tags : { in: tags },
       },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
+        likes:
+          currentUserId !== undefined
+            ? { where: { userId: currentUserId } }
+            : undefined,
+        _count: { select: { likes: true, comments: true } },
+        savedPosts:
+          currentUserId !== undefined
+            ? { where: { id: currentUserId } }
+            : undefined,
+      },
     });
   }
 
@@ -35,12 +65,29 @@ export class PostService {
     });
   }
 
-  getPostById(postId: number) {
+  getPostById(postId: number, currentUserId: number) {
     return this.prisma.post.findUnique({
       where: {
         id: postId,
       },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
+        likes:
+          currentUserId !== undefined
+            ? { where: { userId: currentUserId } }
+            : undefined,
+        _count: { select: { likes: true, comments: true } },
+        savedPosts:
+          currentUserId !== undefined
+            ? { where: { id: currentUserId } }
+            : undefined,
+      },
     });
   }
 
@@ -98,10 +145,30 @@ export class PostService {
         id: postId,
       },
     });
-    // check if user owns this todo_
+
+    // check if user owns this post
     if (!post || post.userId !== userId) {
       throw new ForbiddenException('Access to resources denied');
     }
+
+    await this.prisma.like.deleteMany({
+      where: {
+        postId: postId,
+      },
+    });
+
+    // delete the post images
+    if (post.pictures && post.pictures.length > 0) {
+      for (const picture of post.pictures) {
+        const imagePath = join(process.cwd(), 'uploads/post-images', picture);
+        try {
+          await unlink(imagePath);
+        } catch (err) {
+          console.error(`Error while deleting image ${imagePath}: ${err}`);
+        }
+      }
+    }
+
     await this.prisma.post.delete({
       where: {
         id: postId,
@@ -137,14 +204,60 @@ export class PostService {
     });
   }
 
-  async didUserLikedPost(userId: number, postId: number) {
-    const like = await this.prisma.like.findFirst({
+  //post saving funcs
+
+  async addToFavorites(userId: number, postId: number) {
+    return this.prisma.savedPost.create({
+      data: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+  }
+
+  async removeFromFavorites(userId: number, postId: number) {
+    return this.prisma.savedPost.deleteMany({
       where: {
         userId: userId,
         postId: postId,
       },
     });
+  }
 
-    return like !== null;
+  //comments section
+
+  async addComment(userId: number, postId: number, dto: CreateCommentDto) {
+    return this.prisma.comment.create({
+      data: {
+        ...dto,
+        userId: userId,
+        postId: postId,
+      },
+    });
+  }
+
+  async removeComment(commentId: number) {
+    return this.prisma.comment.deleteMany({
+      where: {
+        id: commentId,
+      },
+    });
+  }
+
+  async getCommentsOfPost(postId: number) {
+    return this.prisma.comment.findMany({
+      where: {
+        postId: postId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
+      },
+    });
   }
 }

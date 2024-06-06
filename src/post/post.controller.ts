@@ -26,6 +26,7 @@ import { diskStorage } from 'multer';
 import { editFileName } from '../utils/file-upload-utils';
 import { OptionalJwtGuard } from '../auth/guard/optional-jwt.guard';
 import { Request } from 'express';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Controller('post')
 export class PostController {
@@ -49,8 +50,8 @@ export class PostController {
   }
 
   @Get('posts-by-tag')
-  getPostsByTags(@Query('tag') tags: string[]) {
-    return this.postService.getPostsByTags(tags);
+  getPostsByTags(@NestRequest() req, @Query('tag') tags: string[]) {
+    return this.postService.getPostsByTags(tags, req?.user?.id);
   }
 
   @Post('likes/add/:userId/:postId')
@@ -74,9 +75,25 @@ export class PostController {
     return this.postService.countLikes(postId);
   }
 
+  @Post('favorites/add/:userId/:postId')
+  async addToFavorites(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
+    return this.postService.addToFavorites(userId, postId);
+  }
+
+  @Delete('favorites/remove/:userId/:postId')
+  async removeFromFavorites(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
+    return this.postService.removeFromFavorites(userId, postId);
+  }
+
   @Get(':id')
-  getPostById(@Param('id', ParseIntPipe) postId: number) {
-    return this.postService.getPostById(postId);
+  getPostById(@NestRequest() req, @Param('id', ParseIntPipe) postId: number) {
+    return this.postService.getPostById(postId, req?.user?.id);
   }
 
   @Get('/images/:imgpath')
@@ -122,5 +139,29 @@ export class PostController {
   @Delete(':id')
   deletePost(@Req() req: Request, @Param('id', ParseIntPipe) postId: number) {
     return this.postService.deletePost(req.user.id, postId);
+  }
+
+  //comments
+
+  @Get('comments/get/:postId')
+  getComments(@Param('postId', ParseIntPipe) postId: number) {
+    return this.postService.getCommentsOfPost(postId);
+  }
+
+  // @UseGuards(JwtGuard)
+  @Post('comment/add')
+  addComment(
+    @Body('userId', ParseIntPipe) userId: number,
+    @Body('postId', ParseIntPipe) postId: number,
+    @Body() dto: CreateCommentDto,
+  ) {
+    return this.postService.addComment(userId, postId, dto);
+  }
+
+  // @UseGuards(JwtGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete('comment/remove/:id')
+  deleteComment(@Param('id', ParseIntPipe) id: number) {
+    return this.postService.removeComment(id);
   }
 }

@@ -54,7 +54,6 @@ export class UserController {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-
     if (!user || !user.photo) {
       throw new NotFoundException('User or avatar not found');
     }
@@ -85,4 +84,6 @@ export class UserController {
       filename: file.filename,
     };
   }
+
+  //subscription funcs
 }
