@@ -54,6 +54,7 @@ export class PostController {
     return this.postService.getPostsByTags(tags, req?.user?.id);
   }
 
+  @UseGuards(JwtGuard)
   @Post('likes/add/:userId/:postId')
   async addLike(
     @Param('userId', ParseIntPipe) userId: number,
@@ -62,6 +63,7 @@ export class PostController {
     return this.postService.addLike(userId, postId);
   }
 
+  @UseGuards(JwtGuard)
   @Delete('likes/remove/:userId/:postId')
   async removeLike(
     @Param('userId', ParseIntPipe) userId: number,
@@ -70,11 +72,13 @@ export class PostController {
     return this.postService.removeLike(userId, postId);
   }
 
+  @UseGuards(JwtGuard)
   @Get('likes/get/:postId')
   async countLikes(@Param('postId', ParseIntPipe) postId: number) {
     return this.postService.countLikes(postId);
   }
 
+  @UseGuards(JwtGuard)
   @Post('favorites/add/:userId/:postId')
   async addToFavorites(
     @Param('userId', ParseIntPipe) userId: number,
@@ -83,6 +87,7 @@ export class PostController {
     return this.postService.addToFavorites(userId, postId);
   }
 
+  @UseGuards(JwtGuard)
   @Delete('favorites/remove/:userId/:postId')
   async removeFromFavorites(
     @Param('userId', ParseIntPipe) userId: number,
@@ -91,16 +96,25 @@ export class PostController {
     return this.postService.removeFromFavorites(userId, postId);
   }
 
+  // @UseGuards(JwtGuard)
+  @Get('favorites/get/:userId')
+  async getSavedPosts(@Param('userId', ParseIntPipe) userId: number) {
+    return this.postService.getFavoritesPosts(userId);
+  }
+
+  @UseGuards(JwtGuard)
   @Get(':id')
   getPostById(@NestRequest() req, @Param('id', ParseIntPipe) postId: number) {
     return this.postService.getPostById(postId, req?.user?.id);
   }
 
+  @UseGuards(JwtGuard)
   @Get('/images/:imgpath')
   seeUploadedFile(@Param('imgpath') image, @Res() res) {
     return res.sendFile(image, { root: './uploads/post-images' });
   }
 
+  @UseGuards(JwtGuard)
   @Post('upload')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -142,13 +156,13 @@ export class PostController {
   }
 
   //comments
-
+  @UseGuards(JwtGuard)
   @Get('comments/get/:postId')
   getComments(@Param('postId', ParseIntPipe) postId: number) {
     return this.postService.getCommentsOfPost(postId);
   }
 
-  // @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard)
   @Post('comment/add')
   addComment(
     @Body('userId', ParseIntPipe) userId: number,
@@ -158,7 +172,7 @@ export class PostController {
     return this.postService.addComment(userId, postId, dto);
   }
 
-  // @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('comment/remove/:id')
   deleteComment(@Param('id', ParseIntPipe) id: number) {

@@ -8,10 +8,11 @@ import { unlink } from 'fs/promises';
 
 @Injectable()
 export class PostService {
+  imageUrlPrefix = 'http://localhost:3000/users/images/';
   constructor(private prisma: PrismaService) {}
 
   async getAllPosts(currentUserId?: number) {
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       include: {
         user: {
           select: {
@@ -31,10 +32,19 @@ export class PostService {
             : undefined,
       },
     });
+
+    for (const post of posts) {
+      if (post.user.photo) {
+        post.user.photo = this.imageUrlPrefix + post.user.photo;
+      } else {
+        post.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return posts;
   }
 
   async getPostsByTags(tags: string[], currentUserId: number) {
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       where: {
         tag: typeof tags === 'string' ? tags : { in: tags },
       },
@@ -53,10 +63,19 @@ export class PostService {
         _count: { select: { likes: true, comments: true } },
         savedPosts:
           currentUserId !== undefined
-            ? { where: { id: currentUserId } }
+            ? { where: { userId: currentUserId } }
             : undefined,
       },
     });
+
+    for (const post of posts) {
+      if (post.user.photo) {
+        post.user.photo = this.imageUrlPrefix + post.user.photo;
+      } else {
+        post.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return posts;
   }
 
   getPosts(userId: number) {
@@ -65,8 +84,8 @@ export class PostService {
     });
   }
 
-  getPostById(postId: number, currentUserId: number) {
-    return this.prisma.post.findUnique({
+  async getPostById(postId: number, currentUserId: number) {
+    const post = await this.prisma.post.findUnique({
       where: {
         id: postId,
       },
@@ -85,10 +104,18 @@ export class PostService {
         _count: { select: { likes: true, comments: true } },
         savedPosts:
           currentUserId !== undefined
-            ? { where: { id: currentUserId } }
+            ? { where: { userId: currentUserId } }
             : undefined,
       },
     });
+
+    if (post.user.photo) {
+      post.user.photo = this.imageUrlPrefix + post.user.photo;
+    } else {
+      post.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+    }
+
+    return post;
   }
 
   async search(query: string) {
@@ -157,6 +184,15 @@ export class PostService {
       },
     });
 
+    await this.prisma.savedPost.deleteMany({
+      where: { postId: postId },
+    });
+
+    await this.prisma.comment.deleteMany({
+      where: {
+        postId: postId,
+      },
+    });
     // delete the post images
     if (post.pictures && post.pictures.length > 0) {
       for (const picture of post.pictures) {
@@ -179,12 +215,20 @@ export class PostService {
   //like functionality
 
   async addLike(userId: number, postId: number) {
-    return this.prisma.like.create({
-      data: {
-        userId: userId,
-        postId: postId,
+    const existingLike = await this.prisma.savedPost.findMany({
+      where: {
+        AND: [{ userId: userId }, { postId: postId }],
       },
     });
+
+    if (!existingLike) {
+      return this.prisma.like.create({
+        data: {
+          userId: userId,
+          postId: postId,
+        },
+      });
+    }
   }
 
   async removeLike(userId: number, postId: number) {
@@ -224,6 +268,32 @@ export class PostService {
     });
   }
 
+  async getFavoritesPosts(userId: number) {
+    const posts = await this.prisma.savedPost.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        post: true,
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
+      },
+    });
+    for (const post of posts) {
+      if (post.user.photo) {
+        post.user.photo = this.imageUrlPrefix + post.user.photo;
+      } else {
+        post.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return posts;
+  }
+
   //comments section
 
   async addComment(userId: number, postId: number, dto: CreateCommentDto) {
@@ -245,7 +315,7 @@ export class PostService {
   }
 
   async getCommentsOfPost(postId: number) {
-    return this.prisma.comment.findMany({
+    const comments = await this.prisma.comment.findMany({
       where: {
         postId: postId,
       },
@@ -259,5 +329,14 @@ export class PostService {
         },
       },
     });
+
+    for (const comment of comments) {
+      if (comment.user.photo) {
+        comment.user.photo = this.imageUrlPrefix + comment.user.photo;
+      } else {
+        comment.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return comments;
   }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -29,6 +30,7 @@ export class UserController {
     private prisma: PrismaService,
   ) {}
 
+  @UseGuards(JwtGuard)
   @Get('me')
   getMe(@Req() req: Request) {
     return req.user;
@@ -39,13 +41,22 @@ export class UserController {
     return this.userService.editUser(id, dto);
   }
 
-  @Get(':login')
-  async getUserProfile(@Param('login') login: string) {
-    return this.userService.getUserProfile(login);
+  @UseGuards(JwtGuard)
+  @Get('profile')
+  async getMyProfile(@Req() req: Request) {
+    return this.userService.getMyProfile(req.user.id);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('profile/:userId')
+  async getUserProfile(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.userService.getUserProfile(userId, req.user.id);
   }
 
   //file upload funcs
-
   @Get(':userId/avatar')
   async getUserAvatar(
     @Param('userId', ParseIntPipe) userId: number,
@@ -54,10 +65,19 @@ export class UserController {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    if (!user || !user.photo) {
-      throw new NotFoundException('User or avatar not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
-    res.sendFile(user.photo, { root: './uploads/users-avatars' });
+    if (user.photo) {
+      res.sendFile(user.photo, { root: './uploads/users-avatars' });
+    } else {
+      res.sendFile('man_avatar.jpg', { root: './assets' });
+    }
+  }
+
+  @Get('/images/:imgpath')
+  seeUploadedFile(@Param('imgpath') image, @Res() res) {
+    return res.sendFile(image, { root: './uploads/users-avatars' });
   }
 
   @UseGuards(JwtGuard)
@@ -85,5 +105,21 @@ export class UserController {
     };
   }
 
-  //subscription funcs
+  //subscriptions
+  @Post('subscribe/:subscriptionId/:subscriberId')
+  async subscribe(
+    @Param('subscriptionId', ParseIntPipe) subscriptionId: number,
+    @Param('subscriberId', ParseIntPipe) subscriberId: number,
+  ) {
+    return this.userService.subscribe(subscriptionId, subscriberId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Delete('unsubscribe/:subscriptionId')
+  async unsubscribe(
+    @Req() req: Request,
+    @Param('subscriptionId', ParseIntPipe) subscriptionId: number,
+  ) {
+    return this.userService.unsubscribe(subscriptionId, req.user.id);
+  }
 }
