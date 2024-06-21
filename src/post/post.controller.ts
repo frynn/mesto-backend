@@ -178,4 +178,16 @@ export class PostController {
   deleteComment(@Param('id', ParseIntPipe) id: number) {
     return this.postService.removeComment(id);
   }
+
+  @UseGuards(JwtGuard)
+  @Get('subscriptions-posts/:userId')
+  getSubscribersPosts(@Param('userId', ParseIntPipe) userId: number) {
+    return this.postService.getPostsOfSubscribedUsers(userId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('liked-posts/:userId')
+  async getLikedPosts(@Param('userId', ParseIntPipe) userId: number) {
+    return this.postService.getLikedPosts(userId);
+  }
 }

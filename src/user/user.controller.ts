@@ -22,6 +22,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { editFileName } from '../utils/file-upload-utils';
 import { PrismaService } from '../prisma/prisma.service';
+import { PasswordChangeDto } from './dto/password-change.dto';
+import { use } from 'passport';
 
 @Controller('users')
 export class UserController {
@@ -34,6 +36,13 @@ export class UserController {
   @Get('me')
   getMe(@Req() req: Request) {
     return req.user;
+  }
+
+  @UseGuards(JwtGuard)
+  @Patch('change-password')
+  async changePassword(@Req() req: Request, @Body() dto: PasswordChangeDto) {
+    console.log(req.user.id);
+    return this.userService.changePassword(req.user.id, dto);
   }
 
   @Patch(':id')
@@ -121,5 +130,23 @@ export class UserController {
     @Param('subscriptionId', ParseIntPipe) subscriptionId: number,
   ) {
     return this.userService.unsubscribe(subscriptionId, req.user.id);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('notifications')
+  async getNotifications(@Req() req: Request) {
+    return this.userService.getUserNotifications(req.user.id);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('subscribers/list/:userId')
+  async getSubscribers(@Param('userId', ParseIntPipe) userId: number) {
+    return this.userService.getSubscribers(userId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('users-comments/:userId')
+  async getUserComments(@Param('userId', ParseIntPipe) userId: number) {
+    return this.userService.getCommentsOfUser(userId);
   }
 }

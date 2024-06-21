@@ -31,6 +31,9 @@ export class PostService {
             ? { where: { userId: currentUserId } }
             : undefined,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     for (const post of posts) {
@@ -119,12 +122,22 @@ export class PostService {
   }
 
   async search(query: string) {
-    return this.prisma.post.findMany({
+    const results = await this.prisma.post.findMany({
       where: {
-        title: {
-          contains: query,
-          mode: 'insensitive',
-        },
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            region: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
       },
       include: {
         user: {
@@ -134,6 +147,21 @@ export class PostService {
         },
       },
     });
+
+    // Разделение результатов на массивы в зависимости от того, где было найдено совпадение
+    const foundInTitle = results.filter((post) =>
+      post.title.toLowerCase().includes(query.toLowerCase()),
+    );
+    const foundInRegion = results.filter(
+      (post) =>
+        post.region.toLowerCase().includes(query.toLowerCase()) &&
+        !post.title.toLowerCase().includes(query.toLowerCase()),
+    );
+
+    return {
+      foundInTitle,
+      foundInRegion,
+    };
   }
 
   async createPost(userId: number, dto: CreatePostDto) {
@@ -215,20 +243,12 @@ export class PostService {
   //like functionality
 
   async addLike(userId: number, postId: number) {
-    const existingLike = await this.prisma.savedPost.findMany({
-      where: {
-        AND: [{ userId: userId }, { postId: postId }],
+    return this.prisma.like.create({
+      data: {
+        userId: userId,
+        postId: postId,
       },
     });
-
-    if (!existingLike) {
-      return this.prisma.like.create({
-        data: {
-          userId: userId,
-          postId: postId,
-        },
-      });
-    }
   }
 
   async removeLike(userId: number, postId: number) {
@@ -328,6 +348,9 @@ export class PostService {
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     for (const comment of comments) {
@@ -338,5 +361,62 @@ export class PostService {
       }
     }
     return comments;
+  }
+
+  async getPostsOfSubscribedUsers(userId: number) {
+    // Получаем ID пользователей, на которых подписан текущий пользователь
+    const subscriptions = await this.prisma.subscription.findMany({
+      where: {
+        subscriptionId: userId,
+      },
+      select: {
+        subscriberId: true,
+      },
+    });
+    console.log(subscriptions);
+
+    // Извлекаем ID пользователей
+    const subscribedUserIds = subscriptions.map((sub) => sub.subscriberId);
+
+    // Получаем посты всех подписанных пользователей
+    const posts = await this.prisma.post.findMany({
+      where: {
+        userId: {
+          in: subscribedUserIds,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+          },
+        },
+        likes: userId !== undefined ? { where: { userId: userId } } : undefined,
+        _count: { select: { likes: true, comments: true } },
+        savedPosts:
+          userId !== undefined ? { where: { userId: userId } } : undefined,
+      },
+    });
+    for (const post of posts) {
+      if (post.user.photo) {
+        post.user.photo = this.imageUrlPrefix + post.user.photo;
+      } else {
+        post.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return posts;
+  }
+
+  async getLikedPosts(userId: number) {
+    return this.prisma.like.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        post: true,
+      },
+    });
   }
 }
