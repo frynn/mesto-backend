@@ -9,6 +9,7 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   private imageUrlPrefix = 'http://localhost:3000/users/images/';
+  postUrlPrefix = 'http://localhost:3000/post/images/';
 
   async editUser(userId: number, dto: EditUserDto) {
     const user = await this.prisma.user.update({
@@ -286,6 +287,9 @@ export class UserService {
         post: true,
       },
     });
+    for (const item of comments) {
+      item.post.pictures[0] = this.postUrlPrefix + item.post.pictures[0];
+    }
     return comments;
   }
 }

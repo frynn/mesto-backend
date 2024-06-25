@@ -5,10 +5,13 @@ import { EditTodoDto } from './dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
+import { CreateEventDto } from './dto/create-event.dto';
+import { CreateReportDto } from './dto/create-report.dto';
 
 @Injectable()
 export class PostService {
   imageUrlPrefix = 'http://localhost:3000/users/images/';
+  postUrlPrefix = 'http://localhost:3000/post/images/';
   constructor(private prisma: PrismaService) {}
 
   async getAllPosts(currentUserId?: number) {
@@ -152,11 +155,21 @@ export class PostService {
     const foundInTitle = results.filter((post) =>
       post.title.toLowerCase().includes(query.toLowerCase()),
     );
+    for (const item of foundInTitle) {
+      if (item.pictures) {
+        item.pictures[0] = this.postUrlPrefix + item.pictures[0];
+      }
+    }
     const foundInRegion = results.filter(
       (post) =>
         post.region.toLowerCase().includes(query.toLowerCase()) &&
         !post.title.toLowerCase().includes(query.toLowerCase()),
     );
+    for (const item of foundInRegion) {
+      if (item.pictures) {
+        item.pictures[0] = this.postUrlPrefix + item.pictures[0];
+      }
+    }
 
     return {
       foundInTitle,
@@ -164,10 +177,120 @@ export class PostService {
     };
   }
 
+  async searchUsersAdmin(query: string) {
+    const results = await this.prisma.user.findMany({
+      where: {
+        login: {
+          contains: query,
+          mode: 'insensitive',
+        },
+        NOT: {
+          status: 'banned',
+          role: 'admin',
+        },
+      },
+      select: {
+        id: true,
+        login: true,
+        photo: true,
+        status: true,
+        role: true,
+      },
+    });
+
+    // Разделение результатов на массивы в зависимости от того, где было найдено совпадение
+    const foundUsers = results.filter((user) =>
+      user.login.toLowerCase().includes(query.toLowerCase()),
+    );
+    for (const item of results) {
+      if (item.photo) {
+        item.photo = this.imageUrlPrefix + item.photo;
+      } else {
+        item.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return {
+      foundUsers,
+    };
+  }
+
+  async banOfUserByAdmin(userId: number) {
+    return this.prisma.user.updateMany({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: 'banned',
+      },
+    });
+  }
+
+  async unbanOfUserByAdmin(userId: number) {
+    return this.prisma.user.updateMany({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: 'active',
+      },
+    });
+  }
+
+  async getBannedUsers() {
+    const bannedUsers = await this.prisma.user.findMany({
+      where: {
+        status: 'banned',
+      },
+      select: {
+        id: true,
+        login: true,
+        photo: true,
+        status: true,
+      },
+    });
+
+    for (const bannedUser of bannedUsers) {
+      if (bannedUser.photo) {
+        bannedUser.photo = this.imageUrlPrefix + bannedUser.photo;
+      } else {
+        bannedUser.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+    }
+    return bannedUsers;
+  }
+
   async createPost(userId: number, dto: CreatePostDto) {
     return this.prisma.post.create({
       data: {
         userId,
+        ...dto,
+      },
+    });
+  }
+
+  async createEvent(userId: number, dto: CreateEventDto) {
+    return this.prisma.post.create({
+      data: {
+        userId,
+        ...dto,
+      },
+    });
+  }
+
+  async editEventById(userId: number, postId: number, dto: CreateEventDto) {
+    const event = await this.prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+    });
+    if (!event || event.userId !== userId) {
+      throw new ForbiddenException('Access to resources denied');
+    }
+    return this.prisma.post.update({
+      where: {
+        id: postId,
+      },
+      data: {
         ...dto,
       },
     });
@@ -410,12 +533,67 @@ export class PostService {
   }
 
   async getLikedPosts(userId: number) {
-    return this.prisma.like.findMany({
+    const likedPosts = await this.prisma.like.findMany({
       where: {
         userId: userId,
       },
       include: {
         post: true,
+      },
+    });
+
+    for (const item of likedPosts) {
+      item.post.pictures[0] = this.postUrlPrefix + item.post.pictures[0];
+    }
+    return likedPosts;
+  }
+
+  async createReport(dto: CreateReportDto) {
+    return this.prisma.report.create({
+      data: {
+        description: dto.description,
+        postId: dto.postId,
+        userId: dto.userId,
+      },
+    });
+  }
+
+  async getReports() {
+    const reports = await this.prisma.report.findMany({
+      include: {
+        post: true,
+        user: {
+          select: {
+            id: true,
+            login: true,
+            photo: true,
+            status: true,
+          },
+        },
+      },
+    });
+    // Преобразование ссылок на картинки
+    const transformedReports = reports.map((report) => {
+      if (report.post.pictures) {
+        report.post.pictures = report.post.pictures.map(
+          (pic) => this.postUrlPrefix + pic,
+        );
+      }
+      if (report.user.photo) {
+        report.user.photo = this.imageUrlPrefix + report.user.photo;
+      } else {
+        report.user.photo = this.imageUrlPrefix + 'man_avatar.jpg';
+      }
+      return report;
+    });
+
+    return transformedReports;
+  }
+
+  async deleteReport(id: number) {
+    return this.prisma.report.deleteMany({
+      where: {
+        id: id,
       },
     });
   }

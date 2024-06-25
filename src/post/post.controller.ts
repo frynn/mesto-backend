@@ -27,10 +27,22 @@ import { editFileName } from '../utils/file-upload-utils';
 import { OptionalJwtGuard } from '../auth/guard/optional-jwt.guard';
 import { Request } from 'express';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { CreateReportDto } from './dto/create-report.dto';
 
 @Controller('post')
 export class PostController {
   constructor(private postService: PostService) {}
+
+  @Get('get-reports')
+  async getReports() {
+    return this.postService.getReports();
+  }
+
+  @Delete('delete-report/:id')
+  async deleteReport(@Param('id', ParseIntPipe) id: number) {
+    return this.postService.deleteReport(id);
+  }
 
   @UseGuards(OptionalJwtGuard)
   @Get('all-posts')
@@ -42,6 +54,26 @@ export class PostController {
   @Get('search')
   async search(@Query('query') query: string) {
     return this.postService.search(query);
+  }
+
+  @Get('search-users')
+  async searchUsers(@Query('query') query: string) {
+    return this.postService.searchUsersAdmin(query);
+  }
+
+  @Patch('ban-by-admin/:id')
+  ban(@Param('id', ParseIntPipe) id: number) {
+    return this.postService.banOfUserByAdmin(id);
+  }
+
+  @Patch('unban-by-admin/:id')
+  unban(@Param('id', ParseIntPipe) id: number) {
+    return this.postService.unbanOfUserByAdmin(id);
+  }
+
+  @Get('banned-users')
+  getBannedUsers() {
+    return this.postService.getBannedUsers();
   }
 
   @Get('user-posts/:userId')
@@ -108,7 +140,6 @@ export class PostController {
     return this.postService.getPostById(postId, req?.user?.id);
   }
 
-  @UseGuards(JwtGuard)
   @Get('/images/:imgpath')
   seeUploadedFile(@Param('imgpath') image, @Res() res) {
     return res.sendFile(image, { root: './uploads/post-images' });
@@ -136,6 +167,12 @@ export class PostController {
   @Post()
   createPost(@Req() req: Request, @Body() dto: CreatePostDto) {
     return this.postService.createPost(req.user.id, dto);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('create-event')
+  createEvent(@Req() req: Request, @Body() dto: CreateEventDto) {
+    return this.postService.createEvent(req.user.id, dto);
   }
 
   @UseGuards(JwtGuard)
@@ -189,5 +226,11 @@ export class PostController {
   @Get('liked-posts/:userId')
   async getLikedPosts(@Param('userId', ParseIntPipe) userId: number) {
     return this.postService.getLikedPosts(userId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('create-report')
+  async createReport(@Req() req: Request, @Body() dto: CreateReportDto) {
+    return this.postService.createReport(dto);
   }
 }

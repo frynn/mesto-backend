@@ -22,6 +22,8 @@ model User {
   about      String?
   photo      String?
   date       String
+  status     String?
+  role       String?
 
   posts        Post[]
   comments     Comment[]
@@ -31,6 +33,7 @@ model User {
   blocked      Blacklist[]    @relation("UserBlocks_blockedToUser")
   subscribers Subscription[] @relation("Subscription_subscriberToUser")
   subscriptions Subscription[] @relation("Subscription_subscriptionToUser")
+  reports      Report[]      @relation("UserReports")
 
   @@map("users")
 }
@@ -46,12 +49,15 @@ model Post {
   pictures    String[]
   tag         String
   region      String
+  date        DateTime?
+  fee         Float?
 
   userId     Int
   user       User        @relation(fields: [userId], references: [id])
   comments   Comment[]
   likes      Like[]
   savedPosts SavedPost[]
+  reports    Report[]    @relation("PostReports")
 
   @@map("posts")
 }
@@ -126,4 +132,17 @@ model Subscription {
   subscription   User @relation("Subscription_subscriptionToUser", fields: [subscriptionId], references: [id])
 
   @@map("subscriptions")
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
+  postId      Int
+  post        Post     @relation("PostReports", fields: [postId], references: [id])
+  userId      Int
+  user        User     @relation("UserReports", fields: [userId], references: [id])
+
+  @@map("reports")
 }

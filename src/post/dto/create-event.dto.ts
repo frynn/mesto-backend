@@ -1,6 +1,6 @@
 import { IsArray, IsOptional, IsString } from 'class-validator';
 
-export class CreatePostDto {
+export class CreateEventDto {
   @IsString()
   title: string;
 
@@ -20,4 +20,8 @@ export class CreatePostDto {
 
   @IsString()
   tag: string;
+
+  date: Date;
+
+  fee: number;
 }
