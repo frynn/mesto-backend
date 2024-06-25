@@ -11,8 +11,12 @@ declare module 'express' {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: { origin: true } });
-  app.useGlobalPipes(new ValidationPipe());
+  const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
   await app.listen(3000);
 }
 
