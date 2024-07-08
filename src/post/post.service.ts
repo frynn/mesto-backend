@@ -344,6 +344,12 @@ export class PostService {
         postId: postId,
       },
     });
+
+    await this.prisma.report.deleteMany({
+      where: {
+        postId: postId,
+      },
+    });
     // delete the post images
     if (post.pictures && post.pictures.length > 0) {
       for (const picture of post.pictures) {
@@ -496,7 +502,6 @@ export class PostService {
         subscriberId: true,
       },
     });
-    console.log(subscriptions);
 
     // Извлекаем ID пользователей
     const subscribedUserIds = subscriptions.map((sub) => sub.subscriberId);

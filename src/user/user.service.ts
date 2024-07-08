@@ -136,7 +136,7 @@ export class UserService {
   async getUserNotifications(userId: number) {
     const subscriptions = await this.prisma.subscription.findMany({
       where: {
-        subscriptionId: userId,
+        subscriberId: userId,
       },
       include: {
         subscription: true,

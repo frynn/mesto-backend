@@ -26,6 +26,8 @@ export class AuthService {
           patronymic: dto.patronymic,
           email: dto.email,
           date: dto.date,
+          status: dto.status,
+          role: dto.role,
           hash,
         },
       });

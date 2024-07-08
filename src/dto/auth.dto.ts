@@ -26,6 +26,10 @@ export class SignUpDto {
 
   @IsString()
   date: string;
+
+  status: string;
+
+  role: string;
 }
 
 export class SignInDto {
